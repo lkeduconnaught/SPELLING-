@@ -155,7 +155,7 @@
         <h2>🌟 Allstars Edu Spelling Defender</h2>
         <p>Select your mode to begin:</p>
         <div class="role-selection">
-            <button type="button" onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Input Words)</button>
+            <button type="button" onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Manage Words)</button>
             <button type="button" onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
         </div>
     </div>
@@ -163,13 +163,13 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type the spelling word, exact English definition, and accurate Mandarin meaning below.</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type the spelling word, exact English definition, and Mandarin meaning below.</p>
         
         <label for="teacher-word-input">Spelling Word:</label>
         <input type="text" id="teacher-word-input" placeholder="e.g., Magnificent">
 
         <label for="teacher-meaning-input">English Definition:</label>
-        <textarea id="teacher-meaning-input" placeholder="Type professional English definition..."></textarea>
+        <textarea id="teacher-meaning-input" placeholder="Type English definition..."></textarea>
 
         <label for="teacher-mandarin-input">中文意思 (Mandarin Meaning):</label>
         <input type="text" id="teacher-mandarin-input" placeholder="Type Chinese translation...">
