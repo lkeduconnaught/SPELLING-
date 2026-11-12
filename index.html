@@ -158,7 +158,7 @@
         <h2>🌟 Allstars Edu Spelling Defender</h2>
         <p>Select your mode to begin:</p>
         <div class="role-selection">
-            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Automated AI Words)</button>
+            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Auto-Dictionary)</button>
             <button onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
         </div>
     </div>
@@ -166,11 +166,11 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type a word. The system automatically generates accurate English definitions and professional Chinese meanings!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type a word and click Add. The system automatically queries high-grade global dictionaries & translation engines!</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., beautiful, environment, science">
-        <div id="loading-text">🤖 Auto-fetching definitions & Mandarin translations... Please wait...</div>
+        <input type="text" id="teacher-word-input" placeholder="e.g., magnificent, journey, brave">
+        <div id="loading-text">🤖 Querying automated dictionary & translating... Please wait...</div>
 
         <button onclick="app.addWord()">Add Word (Fully Automated)</button>
 
@@ -259,63 +259,43 @@ class SpellingGame {
         }
     }
 
-    // Fully Automated Smart Definition & Translation Engine
-    async fetchAutomatedDefinitions(word) {
+    // High-Performance Automated Dictionary & Translation Pipeline
+    async fetchBestDictionaryDefinition(word) {
         const cleanWord = word.trim().toLowerCase();
-        
-        // Comprehensive pre-verified educational dictionary database for absolute accuracy
-        const verifiedDatabase = {
-            "beautiful": { en: "Extremely attractive; pleasing to look at.", zh: "美丽漂亮的" },
-            "active": { en: "Engaged in action; lively and energetic.", zh: "积极活跃的" },
-            "chinese": { en: "Relating to China, its people, or its language.", zh: "中国 / 汉语 / 中文" },
-            "korean": { en: "Relating to Korea, its people, or its language.", zh: "韩国 / 朝鲜语" },
-            "environment": { en: "The surroundings or conditions in which people, animals, and plants live.", zh: "自然环境 / 周围状况" },
-            "camera": { en: "A device used for taking photographs or recording videos.", zh: "照相机 / 摄像机" },
-            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气 / 胆量" },
-            "science": { en: "The systematic study of the physical and natural world.", zh: "科学" },
-            "brazilian": { en: "Relating to Brazil or its people.", zh: "巴西人 / 巴西的" },
-            "apple": { en: "A round fruit with red, green, or yellow skin.", zh: "苹果" },
-            "school": { en: "An institution for educating children.", zh: "学校" },
-            "elephant": { en: "A very large grey mammal with a trunk and tusks.", zh: "大象" }
-        };
-
-        if (verifiedDatabase[cleanWord]) {
-            return verifiedDatabase[cleanWord];
-        }
-
         let englishDef = `A vocabulary word meaning ${cleanWord}.`;
         let mandarinMeaning = cleanWord;
 
-        // 1. Fetch exact English definition from Free Dictionary API
+        // 1. Fetch exact definitions from the Free Global Dictionary API
         try {
             const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data[0] && data[0].meanings && data[0].meanings[0].definitions) {
+                    // Grab the top primary definition
                     englishDef = data[0].meanings[0].definitions[0].definition;
                 }
             }
         } catch (e) {
-            console.warn("Dictionary lookup fallback.");
+            console.warn("Dictionary API lookup warning.");
         }
 
-        // 2. Fetch clean translation via MyMemory API
+        // 2. Fetch professional Mandarin translation
         try {
             const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanWord)}&langpair=en|zh`);
             if (transRes.ok) {
                 const transData = await transRes.json();
                 if (transData && transData.responseData && transData.responseData.translatedText) {
-                    let translated = transData.responseData.translatedText;
-                    // Filter out raw echoes if translation API fails to match
-                    if (translated.toLowerCase() !== cleanWord) {
-                        mandarinMeaning = translated;
+                    let translation = transData.responseData.translatedText;
+                    // Clean up echoes to ensure quality output
+                    if (translation.toLowerCase() !== cleanWord) {
+                        mandarinMeaning = translation;
                     } else {
                         mandarinMeaning = `词义: ${cleanWord}`;
                     }
                 }
             }
         } catch (e) {
-            console.warn("Translation lookup fallback.");
+            console.warn("Translation API warning.");
         }
 
         return {
@@ -336,8 +316,8 @@ class SpellingGame {
 
         loadingText.style.display = 'block';
         
-        // Automatically fetch definitions behind the scenes
-        const result = await this.fetchAutomatedDefinitions(word);
+        // Fully automated fetch
+        const result = await this.fetchBestDictionaryDefinition(word);
 
         loadingText.style.display = 'none';
 
@@ -416,8 +396,4 @@ class SpellingGame {
 
     submitAnswer() {
         const val = document.getElementById('student-answer-input').value.trim();
-        this.studentAnswers[this.currentIndex] = val;
-
-        this.currentIndex++;
-        if(this.currentIndex < this.wordList.length) {
-            this.loadQuestion
+        this.student
