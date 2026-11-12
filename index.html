@@ -165,13 +165,13 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type a word. AI will automatically fetch English and Mandarin meanings!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The automated dictionary will fetch the exact English definition & Mandarin meaning!</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., Elephant, Courage, Science">
-        <div id="loading-text">🤖 AI is generating English & Mandarin meanings... Please wait...</div>
+        <input type="text" id="teacher-word-input" placeholder="e.g., beautiful, environment, camera">
+        <div id="loading-text">🌐 Fetching dictionary definition & Mandarin translation... Please wait...</div>
 
-        <button onclick="app.addWord()">Add Word (AI Auto-Meaning)</button>
+        <button onclick="app.addWord()">Add Word (Auto-Dictionary)</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
@@ -188,7 +188,7 @@
         <button class="speaker-btn" onclick="app.speakCurrentWord()">🔊 Listen to Word</button>
         
         <p><strong>English Meaning:</strong> <span id="game-meaning-display">-</span></p>
-        <p><strong>中文意思 (Mandarin):</strong> <span id="game-mandarin-display" style="color: #047857; font-weight: bold;">-</span></p>
+        <p><strong>中文意思 (Mandarin):</strong> <span id="game-mandarin-display" style="color: #047857; font-weight: bold; font-size: 1.1rem;">-</span></p>
         
         <label for="student-answer-input">Your Spelling:</label>
         <input type="text" id="student-answer-input" placeholder="Type spelling here..." autocomplete="off">
@@ -258,44 +258,41 @@ class SpellingGame {
         }
     }
 
-    // AI automated bilingual definition generator (English + Mandarin)
-    async fetchAIAsyncData(word) {
+    // Automated Online Dictionary & Live Translator API Integration
+    async fetchDictionaryData(word) {
         const cleanWord = word.trim().toLowerCase();
-        
-        // Built-in smart bilingual dictionary for common educational words
-        const bilingualDictionary = {
-            "apple": { en: "A round fruit with red, green, or yellow skin.", zh: "苹果 (píng guǒ)" },
-            "school": { en: "An institution for educating children.", zh: "学校 (xué xiào)" },
-            "elephant": { en: "A very large grey mammal with a trunk and tusks.", zh: "大象 (dà xiàng)" },
-            "volcano": { en: "A mountain with a crater through which lava erupts.", zh: "火山 (huǒ shān)" },
-            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气、胆量 (yǒng qì)" },
-            "science": { en: "The systematic study of the physical and natural world.", zh: "科学 (kē xué)" },
-            "library": { en: "A building containing collections of books to read and borrow.", zh: "图书馆 (tú shū guǎn)" },
-            "teacher": { en: "A person who teaches, especially in a school.", zh: "老师 (lǎo shī)" },
-            "student": { en: "A person who is studying at a school or college.", zh: "学生 (xué sheng)" },
-            "pencil": { en: "An instrument for writing or drawing, consisting of a thin cylinder of graphite.", zh: "铅笔 (qiān bǐ)" }
-        };
+        let englishDef = `Definition for ${cleanWord}.`;
+        let mandarinMeaning = cleanWord;
 
-        if (bilingualDictionary[cleanWord]) {
-            return bilingualDictionary[cleanWord];
-        }
-
-        // Fetch English definition dynamically from live API
-        let englishDef = `A vocabulary word referring to ${word}.`;
+        // 1. Fetch exact English definition from Free Dictionary API
         try {
-            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
-            if (response.ok) {
-                const data = await response.json();
-                englishDef = data[0].meanings[0].definitions[0].definition;
+            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data[0] && data[0].meanings && data[0].meanings[0].definitions) {
+                    englishDef = data[0].meanings[0].definitions[0].definition;
+                }
             }
         } catch (e) {
-            // fallback stays default
+            console.warn("Dictionary API fetch failed, using fallback definition.");
         }
 
-        // Smart Mandarin translation generation fallback
+        // 2. Fetch professional Mandarin translation from MyMemory Translation API
+        try {
+            const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanWord)}&langpair=en|zh`);
+            if (transRes.ok) {
+                const transData = await transRes.json();
+                if (transData && transData.responseData && transData.responseData.translatedText) {
+                    mandarinMeaning = transData.responseData.translatedText;
+                }
+            }
+        } catch (e) {
+            console.warn("Translation API fetch failed.");
+        }
+
         return {
             en: englishDef,
-            zh: `单词: ${word} (拼写练习)`
+            zh: mandarinMeaning
         };
     }
 
@@ -311,7 +308,7 @@ class SpellingGame {
 
         loadingText.style.display = 'block';
         
-        const result = await this.fetchAIAsyncData(word);
+        const result = await this.fetchDictionaryData(word);
 
         loadingText.style.display = 'none';
 
