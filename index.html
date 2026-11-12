@@ -140,14 +140,6 @@
             background: #0ea5e9;
             margin-bottom: 15px;
         }
-        #ai-loading {
-            color: var(--primary);
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: none;
-            margin-top: -6px;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
@@ -158,35 +150,34 @@
         <h2>🌟 Allstars Edu Spelling Defender</h2>
         <p>Select your mode to begin:</p>
         <div class="role-selection">
-            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (AI Powered)</button>
-            <button onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
+            <button type="button" onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Manage Words)</button>
+            <button type="button" onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
         </div>
     </div>
 
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The built-in AI engine will instantly generate precise English and Mandarin meanings!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type a spelling word below. Professional definitions and Mandarin meanings will generate instantly.</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
         <input type="text" id="teacher-word-input" placeholder="e.g., magnificent, environment, courage">
-        <div id="ai-loading">✨ AI is generating definitions & Mandarin translation...</div>
 
-        <button onclick="app.addWordWithAI()" id="add-word-btn">Add Word via AI</button>
+        <button type="button" onclick="app.addWord()">Add Word</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
             <em>No words added yet. Start adding words above!</em>
         </div>
 
-        <button onclick="app.saveSession()" style="background-color: var(--success);">Save List & Return Home</button>
-        <button onclick="app.switchScreen('screen-home')" class="secondary">Back to Home</button>
+        <button type="button" onclick="app.saveSession()" style="background-color: var(--success);">Save List & Return Home</button>
+        <button type="button" onclick="app.switchScreen('screen-home')" class="secondary">Back to Home</button>
     </div>
 
     <!-- SCREEN 3: STUDENT GAME SCREEN -->
     <div id="screen-student-game" class="screen">
         <h2 id="game-progress-title">Question 1 of X</h2>
-        <button class="speaker-btn" onclick="app.speakCurrentWord()">🔊 Listen to Word</button>
+        <button type="button" class="speaker-btn" onclick="app.speakCurrentWord()">🔊 Listen to Word</button>
         
         <p><strong>English Meaning:</strong> <span id="game-meaning-display">-</span></p>
         <p><strong>中文意思 (Mandarin):</strong> <span id="game-mandarin-display" style="color: #047857; font-weight: bold; font-size: 1.1rem;">-</span></p>
@@ -194,7 +185,7 @@
         <label for="student-answer-input">Your Spelling:</label>
         <input type="text" id="student-answer-input" placeholder="Type spelling here..." autocomplete="off">
 
-        <button onclick="app.submitAnswer()">Next</button>
+        <button type="button" onclick="app.submitAnswer()">Next</button>
     </div>
 
     <!-- SCREEN 4: PLEASE CHECK YOUR ANSWER (REVIEW SCREEN) -->
@@ -204,7 +195,7 @@
         
         <div id="review-container" class="review-grid"></div>
 
-        <button onclick="app.proceedToFilter()" style="background-color: var(--success);">Proceed to Submit</button>
+        <button type="button" onclick="app.proceedToFilter()" style="background-color: var(--success);">Proceed to Submit</button>
     </div>
 
     <!-- SCREEN 5: ADVANCED FILTER & SUBMISSION -->
@@ -232,14 +223,14 @@
         <label for="filter-name">Student Name:</label>
         <input type="text" id="filter-name" placeholder="Enter full student name">
 
-        <button onclick="app.submitFinalResults()" style="background-color: var(--success);">Submit Results to Google Sheet</button>
+        <button type="button" onclick="app.submitFinalResults()" style="background-color: var(--success);">Submit Results to Google Sheet</button>
     </div>
 
     <!-- SCREEN 6: RESULTS SCREEN -->
     <div id="screen-results" class="screen">
         <h2>🎉 Spelling Results</h2>
         <div id="results-summary"></div>
-        <button onclick="app.resetGame()">Back to Home</button>
+        <button type="button" onclick="app.resetGame()">Back to Home</button>
     </div>
 </div>
 
@@ -259,12 +250,11 @@ class SpellingGame {
         }
     }
 
-    // High-performance intelligent AI definition generator
-    async fetchAIDefinition(word) {
+    getDictionaryEntry(word) {
         const cleanWord = word.trim().toLowerCase();
         
-        const aiKnowledgeBase = {
-            "magnificent": { en: "Extremely beautiful, elaborate, or impressive.", zh: "宏伟的 / 壮丽的 / 极好的" },
+        const database = {
+            "magnificent": { en: "Extremely beautiful, elaborate, or impressive.", zh: "宏伟的 / 壮丽的" },
             "environment": { en: "The surroundings or conditions in which a person, animal, or plant lives.", zh: "自然环境 / 周围状况" },
             "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气 / 胆量" },
             "science": { en: "The systematic study of the physical and natural world.", zh: "科学" },
@@ -279,51 +269,34 @@ class SpellingGame {
             "elephant": { en: "A very large grey mammal with a trunk and tusks.", zh: "大象" }
         };
 
-        // Simulated intelligent generation delay for smooth user experience
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        if (aiKnowledgeBase[cleanWord]) {
-            return aiKnowledgeBase[cleanWord];
+        if (database[cleanWord]) {
+            return database[cleanWord];
         }
 
-        // Smart generative fallback for any custom word typed by teachers
         return {
-            en: `A key academic vocabulary term referring to ${cleanWord}.`,
-            zh: `核心词汇: ${cleanWord} (英文拼写训练)`
+            en: `A vocabulary spelling word referring to "${word}".`, zh: `词汇: ${word}`
         };
     }
 
-    async addWordWithAI() {
+    addWord() {
         const wordInput = document.getElementById('teacher-word-input');
-        const loadingDiv = document.getElementById('ai-loading');
-        const addBtn = document.getElementById('add-word-btn');
         const word = wordInput.value.trim();
 
-        if (!word) {
+        if(!word) {
             alert("Please enter a spelling word.");
             return;
         }
 
-        loadingDiv.style.display = 'block';
-        addBtn.disabled = true;
+        const entry = this.getDictionaryEntry(word);
 
-        try {
-            const aiData = await this.fetchAIDefinition(word);
-
-            this.wordList.push({ 
-                word: word, 
-                meaning: aiData.en, 
-                mandarin: aiData.zh 
-            });
-            
-            wordInput.value = '';
-            this.renderTeacherPreview();
-        } catch (err) {
-            console.error(err);
-        } finally {
-            loadingDiv.style.display = 'none';
-            addBtn.disabled = false;
-        }
+        this.wordList.push({ 
+            word: word, 
+            meaning: entry.en, 
+            mandarin: entry.zh 
+        });
+        
+        wordInput.value = '';
+        this.renderTeacherPreview();
     }
 
     removeWord(index) {
@@ -340,144 +313,6 @@ class SpellingGame {
         preview.innerHTML = this.wordList.map((item, idx) => `
             <div class="word-row">
                 <div>
-                    <strong>${idx + 1}. ${item.word}</strong><br>
+                    <strong>${idx + 1}.${item.word}</strong><br>
                     <small style="color: #475569;">EN: ${item.meaning}</small><br>
                     <small style="color: #047857; font-weight: bold;">ZH: ${item.mandarin}</small>
-                </div>
-                <button class="danger" onclick="app.removeWord(${idx})">Remove</button>
-            </div>
-        `).join('');
-    }
-
-    saveSession() {
-        if(this.wordList.length === 0) {
-            alert("Please add at least one word.");
-            return;
-        }
-        alert("Spelling list saved successfully!");
-        this.switchScreen('screen-home');
-    }
-
-    startStudentGame() {
-        if(this.wordList.length === 0) {
-            alert("No spelling words available! Ask your teacher to input words first.");
-            return;
-        }
-        this.currentIndex = 0;
-        this.studentAnswers = {};
-        this.switchScreen('screen-student-game');
-        this.loadQuestion();
-    }
-
-    loadQuestion() {
-        const item = this.wordList[this.currentIndex];
-        document.getElementById('game-progress-title').innerText = `Question ${this.currentIndex + 1} of ${this.wordList.length}`;
-        document.getElementById('game-meaning-display').innerText = item.meaning;
-        document.getElementById('game-mandarin-display').innerText = item.mandarin;
-        document.getElementById('student-answer-input').value = this.studentAnswers[this.currentIndex] || '';
-        document.getElementById('student-answer-input').focus();
-        this.speakCurrentWord();
-    }
-
-    speakCurrentWord() {
-        const word = this.wordList[this.currentIndex].word;
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(word);
-            utterance.lang = 'en-US';
-            window.speechSynthesis.speak(utterance);
-        }
-    }
-
-    submitAnswer() {
-        const val = document.getElementById('student-answer-input').value.trim();
-        this.studentAnswers[this.currentIndex] = val;
-
-        this.currentIndex++;
-        if(this.currentIndex < this.wordList.length) {
-            this.loadQuestion();
-        } else {
-            this.renderReviewScreen();
-            this.switchScreen('screen-review');
-        }
-    }
-
-    renderReviewScreen() {
-        const container = document.getElementById('review-container');
-        container.innerHTML = this.wordList.map((item, idx) => {
-            const studentAns = this.studentAnswers[idx] || "(Blank)";
-            return `
-                <div class="review-card" onclick="app.jumpToQuestion(${idx})">
-                    <div>
-                        <strong>Word #${idx + 1}</strong> (${item.mandarin})
-                    </div>
-                    <div>
-                        Your Answer: <strong>${studentAns}</strong> ✏️ (Click to change)
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    jumpToQuestion(index) {
-        this.currentIndex = index;
-        this.switchScreen('screen-student-game');
-        this.loadQuestion();
-    }
-
-    proceedToFilter() {
-        this.switchScreen('screen-filter');
-    }
-
-    submitFinalResults() {
-        const branch = document.getElementById('filter-branch').value;
-        const standard = document.getElementById('filter-standard').value;
-        const studentName = document.getElementById('filter-name').value.trim();
-
-        if(!studentName) {
-            alert("Please enter the student's name.");
-            return;
-        }
-
-        let correctCount = 0;
-        let details = [];
-        this.wordList.forEach((item, idx) => {
-            const studentAns = (this.studentAnswers[idx] || "").trim().toLowerCase();
-            const correctAns = item.word.toLowerCase();
-            const isCorrect = studentAns === correctAns;
-            if(isCorrect) correctCount++;
-            details.push({
-                word: item.word,
-                studentAnswer: this.studentAnswers[idx] || "(Blank)",
-                correct: isCorrect
-            });
-        });
-
-        const summaryDiv = document.getElementById('results-summary');
-        summaryDiv.innerHTML = `
-            <p><strong>Branch:</strong> ${branch}</p>
-            <p><strong>Standard:</strong> ${standard}</p>
-            <p><strong>Student Name:</strong> ${studentName}</p>
-            <p><strong>Score:</strong> ${correctCount} / ${this.wordList.length}</p>
-            <hr>
-            <h3>Detailed Breakdown:</h3>
-            <ul>
-                ${details.map(d => `<li>Word: <strong>${d.word}</strong> | Your Answer: <em>${d.studentAnswer}</em> - ${d.correct ? '✅ Correct' : '❌ Wrong'}</li>`).join('')}
-            </ul>
-        `;
-
-        this.switchScreen('screen-results');
-    }
-
-    resetGame() {
-        this.currentIndex = 0;
-        this.studentAnswers = {};
-        this.switchScreen('screen-home');
-    }
-}
-
-const app = new SpellingGame();
-</script>
-
-</body>
-</html>
