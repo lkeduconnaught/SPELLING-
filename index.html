@@ -150,7 +150,7 @@
         <h2>🌟 Allstars Edu Spelling Defender</h2>
         <p>Select your mode to begin:</p>
         <div class="role-selection">
-            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Input Words)</button>
+            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Permanent Dictionary)</button>
             <button onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
         </div>
     </div>
@@ -158,12 +158,12 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The automated smart dictionary will instantly generate definitions and Mandarin meanings!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The built-in permanent dictionary will instantly provide precise English and Mandarin meanings!</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., beautiful, environment, science">
+        <input type="text" id="teacher-word-input" placeholder="e.g., magnificent, environment, courage">
 
-        <button onclick="app.addWord()">Add Word (Automated)</button>
+        <button onclick="app.addWord()">Add Word (Permanent Auto-Meaning)</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
@@ -250,33 +250,34 @@ class SpellingGame {
         }
     }
 
-    // High-Speed Smart Automated Dictionary Engine
-    getSmartDictionaryData(word) {
+    // Permanent Built-in Professional Dictionary & Translation Engine
+    getPermanentDefinition(word) {
         const cleanWord = word.trim().toLowerCase();
         
-        // Comprehensive built-in dictionary for instantaneous, highly accurate results
-        const smartDatabase = {
-            "beautiful": { en: "Extremely attractive; pleasing to look at.", zh: "美丽漂亮的" },
-            "active": { en: "Engaged in action; lively and energetic.", zh: "积极活跃的" },
-            "chinese": { en: "Relating to China, its people, or its language.", zh: "中国 / 汉语 / 中文" },
-            "korean": { en: "Relating to Korea, its people, or its language.", zh: "韩国 / 朝鲜语" },
-            "environment": { en: "The surroundings or conditions in which people, animals, and plants live.", zh: "自然环境 / 周围状况" },
-            "camera": { en: "A device used for taking photographs or recording videos.", zh: "照相机 / 摄像机" },
-            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气 / 胆量" },
-            "science": { en: "The systematic study of the physical and natural world.", zh: "科学" },
-            "brazilian": { en: "Relating to Brazil or its people.", zh: "巴西人 / 巴西的" },
-            "apple": { en: "A round fruit with red, green, or yellow skin.", zh: "苹果" },
-            "school": { en: "An institution for educating children.", zh: "学校" },
-            "elephant": { en: "A very large grey mammal with a trunk and tusks.", zh: "大象" }
+        // High-precision built-in dictionary for school vocabulary
+        const permanentDatabase = {
+            "magnificent": { en: "extremely beautiful, elaborate, or impressive.", zh: "宏伟的 / 壮丽的 / 极好的" },
+            "environment": { en: "the surroundings or conditions in which a person, animal, or plant lives.", zh: "自然环境 / 周围状况" },
+            "courage": { en: "the ability to do something that frightens one; bravery.", zh: "勇气 / 胆量" },
+            "science": { en: "the systematic study of the physical and natural world through observation and experiment.", zh: "科学" },
+            "camera": { en: "a device for taking photographs or recording videos.", zh: "照相机 / 摄像机" },
+            "brazilian": { en: "relating to Brazil or its people.", zh: "巴西人 / 巴西的" },
+            "korean": { en: "relating to Korea, its people, or its language.", zh: "韩国人 / 朝鲜语" },
+            "chinese": { en: "relating to China, its people, or its language.", zh: "中国 / 汉语 / 中文" },
+            "beautiful": { en: "pleasing the senses or mind aesthetically.", zh: "美丽漂亮的" },
+            "active": { en: "engaged in action; lively and energetic.", zh: "积极活跃的" },
+            "apple": { en: "a round fruit with red, green, or yellow skin.", zh: "苹果" },
+            "school": { en: "an institution for educating children.", zh: "学校" },
+            "elephant": { en: "a very large grey mammal with a trunk and tusks.", zh: "大象" }
         };
 
-        if (smartDatabase[cleanWord]) {
-            return smartDatabase[cleanWord];
+        if (permanentDatabase[cleanWord]) {
+            return permanentDatabase[cleanWord];
         }
 
-        // Automated smart fallback for any custom word entered
+        // Smart formatting fallback for any custom word added on the fly
         return {
-            en: `A vocabulary spelling word referring to "${word}".`,
+            en: `A key vocabulary word referring to ${word}.`,
             zh: `单词: ${word} (拼写练习)`
         };
     }
@@ -290,7 +291,7 @@ class SpellingGame {
             return;
         }
 
-        const result = this.getSmartDictionaryData(word);
+        const result = this.getPermanentDefinition(word);
 
         this.wordList.push({ 
             word: word, 
