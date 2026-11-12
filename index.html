@@ -158,10 +158,10 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type a spelling word below. Professional definitions and Mandarin meanings will generate instantly.</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word below. Professional definitions and Mandarin meanings will generate instantly.</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., magnificent, environment, courage">
+        <input type="text" id="teacher-word-input" placeholder="e.g., bomb, magnificent, environment">
 
         <button type="button" onclick="app.addWord()">Add Word</button>
 
@@ -254,6 +254,7 @@ class SpellingGame {
         const cleanWord = word.trim().toLowerCase();
         
         const database = {
+            "bomb": { en: "A explosive device designed to detonate and cause damage.", zh: "炸弹 / 爆裂物" },
             "magnificent": { en: "Extremely beautiful, elaborate, or impressive.", zh: "宏伟的 / 壮丽的" },
             "environment": { en: "The surroundings or conditions in which a person, animal, or plant lives.", zh: "自然环境 / 周围状况" },
             "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气 / 胆量" },
@@ -273,8 +274,10 @@ class SpellingGame {
             return database[cleanWord];
         }
 
+        // Clean, professional fallback for any custom word so it never looks awkward
         return {
-            en: `A vocabulary spelling word referring to "${word}".`, zh: `词汇: ${word}`
+            en: `An important vocabulary word meaning ${cleanWord}.`,
+            zh: `生词: ${cleanWord}`
         };
     }
 
@@ -313,6 +316,144 @@ class SpellingGame {
         preview.innerHTML = this.wordList.map((item, idx) => `
             <div class="word-row">
                 <div>
-                    <strong>${idx + 1}.${item.word}</strong><br>
+                    <strong>${idx + 1}. ${item.word}</strong><br>
                     <small style="color: #475569;">EN: ${item.meaning}</small><br>
                     <small style="color: #047857; font-weight: bold;">ZH: ${item.mandarin}</small>
+                </div>
+                <button type="button" class="danger" onclick="app.removeWord(${idx})">Remove</button>
+            </div>
+        `).join('');
+    }
+
+    saveSession() {
+        if(this.wordList.length === 0) {
+            alert("Please add at least one word.");
+            return;
+        }
+        alert("Spelling list saved successfully!");
+        this.switchScreen('screen-home');
+    }
+
+    startStudentGame() {
+        if(this.wordList.length === 0) {
+            alert("No spelling words available! Ask your teacher to input words first.");
+            return;
+        }
+        this.currentIndex = 0;
+        this.studentAnswers = {};
+        this.switchScreen('screen-student-game');
+        this.loadQuestion();
+    }
+
+    loadQuestion() {
+        const item = this.wordList[this.currentIndex];
+        document.getElementById('game-progress-title').innerText = `Question ${this.currentIndex + 1} of ${this.wordList.length}`;
+        document.getElementById('game-meaning-display').innerText = item.meaning;
+        document.getElementById('game-mandarin-display').innerText = item.mandarin;
+        document.getElementById('student-answer-input').value = this.studentAnswers[this.currentIndex] || '';
+        document.getElementById('student-answer-input').focus();
+        this.speakCurrentWord();
+    }
+
+    speakCurrentWord() {
+        const word = this.wordList[this.currentIndex].word;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    submitAnswer() {
+        const val = document.getElementById('student-answer-input').value.trim();
+        this.studentAnswers[this.currentIndex] = val;
+
+        this.currentIndex++;
+        if(this.currentIndex < this.wordList.length) {
+            this.loadQuestion();
+        } else {
+            this.renderReviewScreen();
+            this.switchScreen('screen-review');
+        }
+    }
+
+    renderReviewScreen() {
+        const container = document.getElementById('review-container');
+        container.innerHTML = this.wordList.map((item, idx) => {
+            const studentAns = this.studentAnswers[idx] || "(Blank)";
+            return `
+                <div class="review-card" onclick="app.jumpToQuestion(${idx})">
+                    <div>
+                        <strong>Word #${idx + 1}</strong> (${item.mandarin})
+                    </div>
+                    <div>
+                        Your Answer: <strong>${studentAns}</strong> ✏️ (Click to change)
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    jumpToQuestion(index) {
+        this.currentIndex = index;
+        this.switchScreen('screen-student-game');
+        this.loadQuestion();
+    }
+
+    proceedToFilter() {
+        this.switchScreen('screen-filter');
+    }
+
+    submitFinalResults() {
+        const branch = document.getElementById('filter-branch').value;
+        const standard = document.getElementById('filter-standard').value;
+        const studentName = document.getElementById('filter-name').value.trim();
+
+        if(!studentName) {
+            alert("Please enter the student's name.");
+            return;
+        }
+
+        let correctCount = 0;
+        let details = [];
+        this.wordList.forEach((item, idx) => {
+            const studentAns = (this.studentAnswers[idx] || "").trim().toLowerCase();
+            const correctAns = item.word.toLowerCase();
+            const isCorrect = studentAns === correctAns;
+            if(isCorrect) correctCount++;
+            details.push({
+                word: item.word,
+                studentAnswer: this.studentAnswers[idx] || "(Blank)",
+                correct: isCorrect
+            });
+        });
+
+        const summaryDiv = document.getElementById('results-summary');
+        summaryDiv.innerHTML = `
+            <p><strong>Branch:</strong> ${branch}</p>
+            <p><strong>Standard:</strong> ${standard}</p>
+            <p><strong>Student Name:</strong> ${studentName}</p>
+            <p><strong>Score:</strong> ${correctCount} / ${this.wordList.length}</p>
+            <hr>
+            <h3>Detailed Breakdown:</h3>
+            <ul>
+                ${details.map(d => `<li>Word: <strong>${d.word}</strong> | Your Answer: <em>${d.studentAnswer}</em> - ${d.correct ? '✅ Correct' : '❌ Wrong'}</li>`).join('')}
+            </ul>
+        `;
+
+        this.switchScreen('screen-results');
+    }
+
+    resetGame() {
+        this.currentIndex = 0;
+        this.studentAnswers = {};
+        this.switchScreen('screen-home');
+    }
+}
+
+const app = new SpellingGame();
+</script>
+
+</body>
+</html>
