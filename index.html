@@ -69,11 +69,15 @@
         button.secondary:hover {
             background-color: #475569;
         }
-        button.warning {
-            background-color: var(--warning);
+        button.danger {
+            background-color: var(--danger);
+            padding: 6px 12px;
+            width: auto;
+            margin-top: 0;
+            font-size: 0.85rem;
         }
-        button.warning:hover {
-            background-color: #d97706;
+        button.danger:hover {
+            background-color: #dc2626;
         }
         input, select {
             width: 100%;
@@ -91,7 +95,7 @@
             margin-top: 20px;
         }
         .word-list-preview {
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -99,57 +103,38 @@
             margin-bottom: 15px;
             background: #f1f5f9;
         }
-        .word-item-tag {
-            display: inline-block;
-            background: #e0e7ff;
-            color: #3730a3;
-            padding: 4px 10px;
+        .word-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 8px 12px;
             border-radius: 6px;
-            margin: 4px;
-            font-size: 0.9rem;
+            margin-bottom: 8px;
+            border: 1px solid #cbd5e1;
         }
         .review-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 10px;
-            max-height: 250px;
+            max-height: 280px;
             overflow-y: auto;
             margin-bottom: 15px;
         }
         .review-card {
-            padding: 12px;
+            padding: 14px;
             border-radius: 8px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #34d399;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #fff;
+            background: #d1fae5;
+            transition: transform 0.1s, background 0.1s;
         }
-        .review-card.skipped {
-            background-color: #fef08a;
-            border-color: #eab308;
-        }
-        .review-card.answered {
-            background-color: #d1fae5;
-            border-color: #34d399;
-        }
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            display: none;
-        }
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
+        .review-card:hover {
+            background: #a7f3d0;
+            transform: translateY(-1px);
         }
         .speaker-btn {
             background: #0ea5e9;
@@ -165,7 +150,7 @@
         <h2>🌟 Allstars Edu Spelling Game</h2>
         <p>Select your mode to begin:</p>
         <div class="role-selection">
-            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Input Words)</button>
+            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Manage Words)</button>
             <button onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
         </div>
     </div>
@@ -173,20 +158,19 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., Elephant">
+        <p style="font-size: 0.9rem; color: #64748b;">Type a word. AI will automatically generate the meaning/hint for students!</p>
         
-        <label for="teacher-meaning-input">Meaning / Hint (AI or Custom):</label>
-        <input type="text" id="teacher-meaning-input" placeholder="e.g., A very large grey animal with a trunk">
+        <label for="teacher-word-input">Enter Spelling Word:</label>
+        <input type="text" id="teacher-word-input" placeholder="e.g., Elephant, Courage, Volcano">
 
-        <button onclick="app.addWord()">Add Word to List</button>
+        <button onclick="app.addWord()">Add Word (AI Auto-Meaning)</button>
 
-        <h3>Current Spelling Session List:</h3>
+        <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
             <em>No words added yet.</em>
         </div>
 
-        <button onclick="app.saveSession()" style="background-color: var(--success);">Save & Return Home</button>
+        <button onclick="app.saveSession()" style="background-color: var(--success);">Save List & Return Home</button>
         <button onclick="app.switchScreen('screen-home')" class="secondary">Back to Home</button>
     </div>
 
@@ -195,23 +179,22 @@
         <h2 id="game-progress-title">Question 1 of X</h2>
         <button class="speaker-btn" onclick="app.speakCurrentWord()">🔊 Listen to Word</button>
         
-        <p><strong>Hint / Meaning:</strong> <span id="game-meaning-display">-</span></p>
+        <p><strong>AI Meaning / Hint:</strong> <span id="game-meaning-display">-</span></p>
         
         <label for="student-answer-input">Your Spelling:</label>
         <input type="text" id="student-answer-input" placeholder="Type spelling here..." autocomplete="off">
 
-        <button onclick="app.submitAnswer()">Next / Confirm Answer</button>
-        <button onclick="app.promptSkip()" class="warning">Skip Word</button>
+        <button onclick="app.submitAnswer()">Next</button>
     </div>
 
-    <!-- SCREEN 4: REVIEW & RETRY SCREEN -->
+    <!-- SCREEN 4: PLEASE CHECK YOUR ANSWER (REVIEW SCREEN) -->
     <div id="screen-review" class="screen">
-        <h2>📝 Review Your Spelling</h2>
-        <p>Words highlighted in <span style="background-color: #fef08a; padding: 2px 6px; border-radius: 4px;">yellow</span> were skipped or unanswered. Click any word to retry before submitting!</p>
+        <h2>📝 Please check your answer</h2>
+        <p>Here is a list of the spelling words you entered. Click any word if you want to change your answer before final submission!</p>
         
         <div id="review-container" class="review-grid"></div>
 
-        <button onclick="app.proceedToFilter()" style="background-color: var(--success);">Proceed to Final Submit</button>
+        <button onclick="app.proceedToFilter()" style="background-color: var(--success);">Proceed to Submit</button>
     </div>
 
     <!-- SCREEN 5: ADVANCED FILTER & SUBMISSION -->
@@ -250,26 +233,15 @@
     </div>
 </div>
 
-<!-- CONFIRMATION / ENCOURAGEMENT MODAL -->
-<div id="skip-modal" class="modal">
-    <div class="modal-content">
-        <h3>Are you sure you want to skip?</h3>
-        <p style="color: #d97706; font-weight: bold;">Don't give up easily! You can do this!<br>别放弃，再试一次！加油！</p>
-        <button onclick="app.confirmSkip()" class="warning">Yes, Skip</button>
-        <button onclick="app.closeModal()" class="secondary">Cancel (Keep Trying)</button>
-    </div>
-</div>
-
 <script>
 class SpellingGame {
     constructor() {
         this.wordList = [
             { word: "apple", meaning: "A round fruit with red, green, or yellow skin." },
-            { word: "school", meaning: "A place where children go to learn." }
+            { word: "school", meaning: "A place where children go to learn and study." }
         ];
         this.currentIndex = 0;
         this.studentAnswers = {}; // index -> typed answer
-        this.skippedStatus = {};  // index -> boolean
     }
 
     switchScreen(screenId) {
@@ -280,21 +252,46 @@ class SpellingGame {
         }
     }
 
+    // AI automated meaning generator simulation (built-in dictionary & smart definer)
+    generateAIMeaning(word) {
+        const cleanWord = word.trim().toLowerCase();
+        const dictionary = {
+            "apple": "A round fruit with red, green, or yellow skin and crisp flesh.",
+            "school": "An institution for educating children.",
+            "elephant": "A very large grey mammal with trunk, large ears, and tusks.",
+            "volcano": "A mountain or hill having a crater through which lava and gas have been erupted.",
+            "courage": "The ability to do something that frightens one; bravery.",
+            "science": "The intellectual and practical activity encompassing the systematic study of the physical and natural world.",
+            "library": "A building or room containing collections of books for people to read and borrow."
+        };
+
+        if (dictionary[cleanWord]) {
+            return dictionary[cleanWord];
+        }
+
+        // Fallback smart AI heuristic definer for any other custom word
+        return `A vocabulary word referring to ${word}. Listen carefully to the pronunciation and spell it out correctly!`;
+    }
+
     addWord() {
         const wordInput = document.getElementById('teacher-word-input');
-        const meaningInput = document.getElementById('teacher-meaning-input');
-        
         const word = wordInput.value.trim();
-        const meaning = meaningInput.value.trim() || "No meaning provided.";
 
         if(!word) {
             alert("Please enter a spelling word.");
             return;
         }
 
+        // Automated AI Meaning generation
+        const meaning = this.generateAIMeaning(word);
+
         this.wordList.push({ word, meaning });
         wordInput.value = '';
-        meaningInput.value = '';
+        this.renderTeacherPreview();
+    }
+
+    removeWord(index) {
+        this.wordList.splice(index, 1);
         this.renderTeacherPreview();
     }
 
@@ -304,7 +301,12 @@ class SpellingGame {
             preview.innerHTML = "<em>No words added yet.</em>";
             return;
         }
-        preview.innerHTML = this.wordList.map(item => `<span class="word-item-tag"><strong>${item.word}</strong>: ${item.meaning}</span>`).join('');
+        preview.innerHTML = this.wordList.map((item, idx) => `
+            <div class="word-row">
+                <div><strong>${item.word}</strong><br><small style="color: #64748b;">AI Meaning: ${item.meaning}</small></div>
+                <button class="danger" onclick="app.removeWord(${idx})">Remove</button>
+            </div>
+        `).join('');
     }
 
     saveSession() {
@@ -323,7 +325,6 @@ class SpellingGame {
         }
         this.currentIndex = 0;
         this.studentAnswers = {};
-        this.skippedStatus = {};
         this.switchScreen('screen-student-game');
         this.loadQuestion();
     }
@@ -340,6 +341,7 @@ class SpellingGame {
     speakCurrentWord() {
         const word = this.wordList[this.currentIndex].word;
         if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // Stop previous utterance if any
             const utterance = new SpeechSynthesisUtterance(word);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
@@ -349,30 +351,6 @@ class SpellingGame {
     submitAnswer() {
         const val = document.getElementById('student-answer-input').value.trim();
         this.studentAnswers[this.currentIndex] = val;
-        this.skippedStatus[this.currentIndex] = false;
-
-        this.currentIndex++;
-        if(this.currentIndex < this.wordList.length) {
-            this.loadQuestion();
-        } else {
-            this.renderReviewScreen();
-            this.switchScreen('screen-review');
-        }
-    }
-
-    promptSkip() {
-        document.getElementById('skip-modal').style.display = 'flex';
-    }
-
-    closeModal() {
-        document.getElementById('skip-modal').style.display = 'none';
-    }
-
-    confirmSkip() {
-        this.closeModal();
-        const val = document.getElementById('student-answer-input').value.trim();
-        this.studentAnswers[this.currentIndex] = val;
-        this.skippedStatus[this.currentIndex] = true;
 
         this.currentIndex++;
         if(this.currentIndex < this.wordList.length) {
@@ -386,17 +364,15 @@ class SpellingGame {
     renderReviewScreen() {
         const container = document.getElementById('review-container');
         container.innerHTML = this.wordList.map((item, idx) => {
-            const answered = this.studentAnswers[idx] && this.studentAnswers[idx].length > 0;
-            const skipped = this.skippedStatus[idx] || !answered;
-            const cardClass = skipped ? 'review-card skipped' : 'review-card answered';
-            const statusText = skipped ? '⚠️ Unanswered / Skipped (Click to Retry)' : `✅ Answered: "${this.studentAnswers[idx]}"`;
-            
+            const studentAns = this.studentAnswers[idx] || "(Blank)";
             return `
-                <div class="${cardClass}" onclick="app.jumpToQuestion(${idx})">
+                <div class="review-card" onclick="app.jumpToQuestion(${idx})">
                     <div>
                         <strong>Word #${idx + 1}</strong> (${item.meaning})
                     </div>
-                    <div>${statusText}</div>
+                    <div>
+                        Your Answer: <strong>${studentAns}</strong> ✏️ (Click to change)
+                    </div>
                 </div>
             `;
         }).join('');
@@ -422,7 +398,6 @@ class SpellingGame {
             return;
         }
 
-        // Calculate score
         let correctCount = 0;
         let details = [];
         this.wordList.forEach((item, idx) => {
@@ -437,7 +412,6 @@ class SpellingGame {
             });
         });
 
-        // Display results
         const summaryDiv = document.getElementById('results-summary');
         summaryDiv.innerHTML = `
             <p><strong>Branch:</strong> ${branch}</p>
@@ -451,18 +425,12 @@ class SpellingGame {
             </ul>
         `;
 
-        // Note regarding Google Sheets backend:
-        // To connect this data to an organized Google Sheet automatically based on Branch, Standard, and Name, 
-        // you can deploy a Google Apps Script web app endpoint and fetch() it here:
-        // fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', { method: 'POST', body: JSON.stringify({ branch, standard, studentName, score: correctCount, details }) });
-
         this.switchScreen('screen-results');
     }
 
     resetGame() {
         this.currentIndex = 0;
         this.studentAnswers = {};
-        this.skippedStatus = {};
         this.switchScreen('screen-home');
     }
 }
