@@ -95,7 +95,7 @@
             margin-top: 20px;
         }
         .word-list-preview {
-            max-height: 200px;
+            max-height: 220px;
             overflow-y: auto;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -108,7 +108,7 @@
             justify-content: space-between;
             align-items: center;
             background: white;
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 6px;
             margin-bottom: 8px;
             border: 1px solid #cbd5e1;
@@ -236,10 +236,7 @@
 <script>
 class SpellingGame {
     constructor() {
-        this.wordList = [
-            { word: "apple", meaning: "A round fruit with red, green, or yellow skin." },
-            { word: "school", meaning: "A place where children go to learn and study." }
-        ];
+        this.wordList = []; // Started completely empty from scratch
         this.currentIndex = 0;
         this.studentAnswers = {}; // index -> typed answer
     }
@@ -252,16 +249,16 @@ class SpellingGame {
         }
     }
 
-    // AI automated meaning generator simulation (built-in dictionary & smart definer)
+    // AI automated meaning generator simulation
     generateAIMeaning(word) {
         const cleanWord = word.trim().toLowerCase();
         const dictionary = {
-            "apple": "A round fruit with red, green, or yellow skin and crisp flesh.",
+            "apple": "A round fruit with red, green, or yellow skin.",
             "school": "An institution for educating children.",
             "elephant": "A very large grey mammal with trunk, large ears, and tusks.",
             "volcano": "A mountain or hill having a crater through which lava and gas have been erupted.",
             "courage": "The ability to do something that frightens one; bravery.",
-            "science": "The intellectual and practical activity encompassing the systematic study of the physical and natural world.",
+            "science": "The systematic study of the physical and natural world.",
             "library": "A building or room containing collections of books for people to read and borrow."
         };
 
@@ -269,7 +266,6 @@ class SpellingGame {
             return dictionary[cleanWord];
         }
 
-        // Fallback smart AI heuristic definer for any other custom word
         return `A vocabulary word referring to ${word}. Listen carefully to the pronunciation and spell it out correctly!`;
     }
 
@@ -282,9 +278,7 @@ class SpellingGame {
             return;
         }
 
-        // Automated AI Meaning generation
         const meaning = this.generateAIMeaning(word);
-
         this.wordList.push({ word, meaning });
         wordInput.value = '';
         this.renderTeacherPreview();
@@ -298,12 +292,12 @@ class SpellingGame {
     renderTeacherPreview() {
         const preview = document.getElementById('teacher-word-preview');
         if(this.wordList.length === 0) {
-            preview.innerHTML = "<em>No words added yet.</em>";
+            preview.innerHTML = "<em>No words added yet. Start adding words above!</em>";
             return;
         }
         preview.innerHTML = this.wordList.map((item, idx) => `
             <div class="word-row">
-                <div><strong>${item.word}</strong><br><small style="color: #64748b;">AI Meaning: ${item.meaning}</small></div>
+                <div><strong>${idx + 1}. ${item.word}</strong><br><small style="color: #64748b;">Meaning: ${item.meaning}</small></div>
                 <button class="danger" onclick="app.removeWord(${idx})">Remove</button>
             </div>
         `).join('');
@@ -341,7 +335,7 @@ class SpellingGame {
     speakCurrentWord() {
         const word = this.wordList[this.currentIndex].word;
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); // Stop previous utterance if any
+            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(word);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
