@@ -166,13 +166,13 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type a word and click Add. The system automatically queries high-grade global dictionaries & translation engines!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type a word and click Add. The system automatically queries dictionaries & translation engines!</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., magnificent, journey, brave">
-        <div id="loading-text">🤖 Querying automated dictionary & translating... Please wait...</div>
+        <input type="text" id="teacher-word-input" placeholder="e.g., beautiful, environment, science">
+        <div id="loading-text">🤖 Auto-fetching definitions & Mandarin translations... Please wait...</div>
 
-        <button onclick="app.addWord()">Add Word (Fully Automated)</button>
+        <button id="add-btn" onclick="app.addWord()">Add Word (Fully Automated)</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
@@ -259,34 +259,29 @@ class SpellingGame {
         }
     }
 
-    // High-Performance Automated Dictionary & Translation Pipeline
     async fetchBestDictionaryDefinition(word) {
         const cleanWord = word.trim().toLowerCase();
         let englishDef = `A vocabulary word meaning ${cleanWord}.`;
         let mandarinMeaning = cleanWord;
 
-        // 1. Fetch exact definitions from the Free Global Dictionary API
         try {
             const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data[0] && data[0].meanings && data[0].meanings[0].definitions) {
-                    // Grab the top primary definition
                     englishDef = data[0].meanings[0].definitions[0].definition;
                 }
             }
         } catch (e) {
-            console.warn("Dictionary API lookup warning.");
+            console.warn("Dictionary lookup warning.");
         }
 
-        // 2. Fetch professional Mandarin translation
         try {
             const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanWord)}&langpair=en|zh`);
             if (transRes.ok) {
                 const transData = await transRes.json();
                 if (transData && transData.responseData && transData.responseData.translatedText) {
                     let translation = transData.responseData.translatedText;
-                    // Clean up echoes to ensure quality output
                     if (translation.toLowerCase() !== cleanWord) {
                         mandarinMeaning = translation;
                     } else {
@@ -295,7 +290,7 @@ class SpellingGame {
                 }
             }
         } catch (e) {
-            console.warn("Translation API warning.");
+            console.warn("Translation lookup warning.");
         }
 
         return {
@@ -307,6 +302,7 @@ class SpellingGame {
     async addWord() {
         const wordInput = document.getElementById('teacher-word-input');
         const loadingText = document.getElementById('loading-text');
+        const addBtn = document.getElementById('add-btn');
         const word = wordInput.value.trim();
 
         if(!word) {
@@ -315,20 +311,29 @@ class SpellingGame {
         }
 
         loadingText.style.display = 'block';
+        addBtn.disabled = true;
         
-        // Fully automated fetch
-        const result = await this.fetchBestDictionaryDefinition(word);
+        try {
+            const result = await this.fetchBestDictionaryDefinition(word);
 
-        loadingText.style.display = 'none';
-
-        this.wordList.push({ 
-            word: word, 
-            meaning: result.en, 
-            mandarin: result.zh 
-        });
-        
-        wordInput.value = '';
-        this.renderTeacherPreview();
+            this.wordList.push({ 
+                word: word, 
+                meaning: result.en, 
+                mandarin: result.zh 
+            });
+            
+            wordInput.value = '';
+            this.renderTeacherPreview();
+        } catch (err) {
+            console.error(err);
+            // Fallback addition even if network fails
+            this.wordList.push({ word: word, meaning: `Definition for ${word}`, mandarin: word });
+            wordInput.value = '';
+            this.renderTeacherPreview();
+        } finally {
+            loadingText.style.display = 'none';
+            addBtn.disabled = false;
+        }
     }
 
     removeWord(index) {
@@ -396,4 +401,93 @@ class SpellingGame {
 
     submitAnswer() {
         const val = document.getElementById('student-answer-input').value.trim();
-        this.student
+        this.studentAnswers[this.currentIndex] = val;
+
+        this.currentIndex++;
+        if(this.currentIndex < this.wordList.length) {
+            this.loadQuestion();
+        } else {
+            this.renderReviewScreen();
+            this.switchScreen('screen-review');
+        }
+    }
+
+    renderReviewScreen() {
+        const container = document.getElementById('review-container');
+        container.innerHTML = this.wordList.map((item, idx) => {
+            const studentAns = this.studentAnswers[idx] || "(Blank)";
+            return `
+                <div class="review-card" onclick="app.jumpToQuestion(${idx})">
+                    <div>
+                        <strong>Word #${idx + 1}</strong> (${item.mandarin})
+                    </div>
+                    <div>
+                        Your Answer: <strong>${studentAns}</strong> ✏️ (Click to change)
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    jumpToQuestion(index) {
+        this.currentIndex = index;
+        this.switchScreen('screen-student-game');
+        this.loadQuestion();
+    }
+
+    proceedToFilter() {
+        this.switchScreen('screen-filter');
+    }
+
+    submitFinalResults() {
+        const branch = document.getElementById('filter-branch').value;
+        const standard = document.getElementById('filter-standard').value;
+        const studentName = document.getElementById('filter-name').value.trim();
+
+        if(!studentName) {
+            alert("Please enter the student's name.");
+            return;
+        }
+
+        let correctCount = 0;
+        let details = [];
+        this.wordList.forEach((item, idx) => {
+            const studentAns = (this.studentAnswers[idx] || "").trim().toLowerCase();
+            const correctAns = item.word.toLowerCase();
+            const isCorrect = studentAns === correctAns;
+            if(isCorrect) correctCount++;
+            details.push({
+                word: item.word,
+                studentAnswer: this.studentAnswers[idx] || "(Blank)",
+                correct: isCorrect
+            });
+        });
+
+        const summaryDiv = document.getElementById('results-summary');
+        summaryDiv.innerHTML = `
+            <p><strong>Branch:</strong> ${branch}</p>
+            <p><strong>Standard:</strong> ${standard}</p>
+            <p><strong>Student Name:</strong> ${studentName}</p>
+            <p><strong>Score:</strong> ${correctCount} / ${this.wordList.length}</p>
+            <hr>
+            <h3>Detailed Breakdown:</h3>
+            <ul>
+                ${details.map(d => `<li>Word: <strong>${d.word}</strong> | Your Answer: <em>${d.studentAnswer}</em> - ${d.correct ? '✅ Correct' : '❌ Wrong'}</li>`).join('')}
+            </ul>
+        `;
+
+        this.switchScreen('screen-results');
+    }
+
+    resetGame() {
+        this.currentIndex = 0;
+        this.studentAnswers = {};
+        this.switchScreen('screen-home');
+    }
+}
+
+const app = new SpellingGame();
+</script>
+
+</body>
+</html>
