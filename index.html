@@ -79,7 +79,18 @@
         button.danger:hover {
             background-color: #dc2626;
         }
-        input, select {
+        button.edit-btn {
+            background-color: var(--warning);
+            padding: 6px 12px;
+            width: auto;
+            margin-top: 0;
+            font-size: 0.85rem;
+            margin-right: 5px;
+        }
+        button.edit-btn:hover {
+            background-color: #d97706;
+        }
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             margin: 8px 0 16px 0;
@@ -87,6 +98,11 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1rem;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            height: 60px;
         }
         .role-selection {
             display: flex;
@@ -95,7 +111,7 @@
             margin-top: 20px;
         }
         .word-list-preview {
-            max-height: 220px;
+            max-height: 250px;
             overflow-y: auto;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -106,12 +122,16 @@
         .word-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             background: white;
-            padding: 10px 12px;
+            padding: 12px;
             border-radius: 6px;
             margin-bottom: 8px;
             border: 1px solid #cbd5e1;
+        }
+        .action-btns {
+            display: flex;
+            gap: 5px;
         }
         .review-grid {
             display: grid;
@@ -165,20 +185,26 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The smart dictionary will fetch rich English definitions and multi-angle Mandarin meanings!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type a word. The automated dictionary will instantly fill in the definitions. You can also fine-tune the text freely!</p>
         
-        <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., Korean, environment, camera">
-        <div id="loading-text">🌐 Fetching rich English definition & detailed Mandarin meanings... Please wait...</div>
+        <label for="teacher-word-input">Spelling Word:</label>
+        <input type="text" id="teacher-word-input" placeholder="e.g., korean, environment, courage">
+        <div id="loading-text">🌐 Fetching high-grade dictionary definitions & Chinese translations... Please wait...</div>
 
-        <button onclick="app.addWord()">Add Word (Rich Dictionary)</button>
+        <label for="teacher-meaning-input">English Definition:</label>
+        <textarea id="teacher-meaning-input" placeholder="Auto-filled by dictionary..."></textarea>
+
+        <label for="teacher-mandarin-input">中文意思 (Mandarin Meaning):</label>
+        <input type="text" id="teacher-mandarin-input" placeholder="Auto-filled translation...">
+
+        <button onclick="app.addWord()" style="background-color: var(--success);">Add Word to List</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
             <em>No words added yet. Start adding words above!</em>
         </div>
 
-        <button onclick="app.saveSession()" style="background-color: var(--success);">Save List & Return Home</button>
+        <button onclick="app.saveSession()" style="background-color: var(--primary);">Save List & Return Home</button>
         <button onclick="app.switchScreen('screen-home')" class="secondary">Back to Home</button>
     </div>
 
@@ -248,6 +274,16 @@ class SpellingGame {
         this.wordList = [];
         this.currentIndex = 0;
         this.studentAnswers = {};
+        
+        // Auto-fetch trigger when typing words in teacher input
+        let typingTimer;
+        document.getElementById('teacher-word-input').addEventListener('input', (e) => {
+            clearTimeout(typingTimer);
+            const word = e.target.value.trim();
+            if (word.length > 1) {
+                typingTimer = setTimeout(() => this.autoFetchDictionary(word), 500);
+            }
+        });
     }
 
     switchScreen(screenId) {
@@ -258,92 +294,69 @@ class SpellingGame {
         }
     }
 
-    // High-Detail Rich Dictionary Engine (English + Multi-Angle Mandarin)
-    async fetchRichDictionaryData(word) {
-        const cleanWord = word.trim();
-        const lowerWord = cleanWord.toLowerCase();
-        
-        // Expanded built-in rich dictionary for top educational terms & proper nouns (like Korean, Brazilian, etc.)
-        const richDatabase = {
-            "korean": { en: "A native or inhabitant of Korea, or its language.", zh: "韩国人 / 朝鲜人 / 韩国语 / 朝鲜语" },
-            "brazilian": { en: "A native or inhabitant of Brazil.", zh: "巴西人 / 巴西的" },
-            "apple": { en: "A round fruit with red, green, or yellow skin and crisp flesh.", zh: "苹果 (shuǐguǒ - 水果)" },
-            "school": { en: "An institution for educating children.", zh: "学校 (xuéxiào - 学习的地方)" },
-            "elephant": { en: "A very large grey mammal with a trunk, large ears, and tusks.", zh: "大象 (dàxiàng - 大型哺乳动物)" },
-            "volcano": { en: "A mountain with a crater through which lava and gas erupt.", zh: "火山 (huǒshān)" },
-            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气、胆量 (yǒngqì)" },
-            "science": { en: "The systematic study of the physical and natural world.", zh: "科学 (kēxué)" },
-            "library": { en: "A building containing collections of books for reading and borrowing.", zh: "图书馆 (túshūguǎn)" },
-            "environment": { en: "The surroundings or conditions in which a person, animal, or plant lives.", zh: "环境、自然环境 (huánjìng)" }
-        };
+    // High-Accuracy Free Global Dictionary & Translation Aggregator
+    async autoFetchDictionary(word) {
+        const cleanWord = word.trim().toLowerCase();
+        const loadingText = document.getElementById('loading-text');
+        loadingText.style.display = 'block';
 
-        if (richDatabase[lowerWord]) {
-            return richDatabase[lowerWord];
-        }
-
-        let englishDef = `A term meaning ${cleanWord}.`;
+        let englishDef = `Definition for ${cleanWord}`;
         let mandarinMeaning = cleanWord;
 
-        // 1. Fetch exact English definition
+        // 1. Fetch exact definitions from Free Dictionary API (Wiktionary ecosystem)
         try {
-            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lowerWord)}`);
+            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data[0] && data[0].meanings && data[0].meanings[0].definitions) {
-                    const defs = data[0].meanings[0].definitions;
-                    englishDef = defs.map((d, i) => `${i + 1}. ${d.definition}`).join(' ');
+                    englishDef = data[0].meanings[0].definitions[0].definition;
                 }
             }
         } catch (e) {
-            console.warn("Dictionary lookup fallback.");
+            console.warn("Dictionary network lookup fallback.");
         }
 
-        // 2. Fetch multi-angle Mandarin translations
+        // 2. Fetch professional multi-word translation for Chinese
         try {
             const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanWord)}&langpair=en|zh`);
             if (transRes.ok) {
                 const transData = await transRes.json();
                 if (transData && transData.responseData && transData.responseData.translatedText) {
-                    let primaryTrans = transData.responseData.translatedText;
-                    // Gather matches if available for richer detail
-                    let matches = transData.matches ? transData.matches.map(m => m.translation).filter(t => t && t !== primaryTrans) : [];
-                    let uniqueMatches = [...new Set([primaryTrans, ...matches])].slice(0, 3);
-                    mandarinMeaning = uniqueMatches.join(' / ');
+                    mandarinMeaning = transData.responseData.translatedText;
                 }
             }
         } catch (e) {
-            console.warn("Translation lookup fallback.");
+            console.warn("Translation network lookup fallback.");
         }
 
-        return {
-            en: englishDef,
-            zh: mandarinMeaning
-        };
+        loadingText.style.display = 'none';
+
+        // Auto-fill the input boxes so teachers can review or tweak them instantly
+        document.getElementById('teacher-meaning-input').value = englishDef;
+        document.getElementById('teacher-mandarin-input').value = mandarinMeaning;
     }
 
-    async addWord() {
-        const wordInput = document.getElementById('teacher-word-input');
-        const loadingText = document.getElementById('loading-text');
-        const word = wordInput.value.trim();
+    addWord() {
+        const word = document.getElementById('teacher-word-input').value.trim();
+        const meaning = document.getElementById('teacher-meaning-input').value.trim();
+        const mandarin = document.getElementById('teacher-mandarin-input').value.trim();
 
         if(!word) {
             alert("Please enter a spelling word.");
             return;
         }
 
-        loadingText.style.display = 'block';
-        
-        const result = await this.fetchRichDictionaryData(word);
-
-        loadingText.style.display = 'none';
-
         this.wordList.push({ 
             word: word, 
-            meaning: result.en, 
-            mandarin: result.zh 
+            meaning: meaning || `Definition for ${word}`, 
+            mandarin: mandarin || word 
         });
         
-        wordInput.value = '';
+        // Reset inputs
+        document.getElementById('teacher-word-input').value = '';
+        document.getElementById('teacher-meaning-input').value = '';
+        document.getElementById('teacher-mandarin-input').value = '';
+        
         this.renderTeacherPreview();
     }
 
@@ -352,10 +365,22 @@ class SpellingGame {
         this.renderTeacherPreview();
     }
 
+    editWord(index) {
+        const item = this.wordList[index];
+        document.getElementById('teacher-word-input').value = item.word;
+        document.getElementById('teacher-meaning-input').value = item.meaning;
+        document.getElementById('teacher-mandarin-input').value = item.mandarin;
+        
+        // Remove from list so it can be re-added updated
+        this.wordList.splice(index, 1);
+        this.renderTeacherPreview();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     renderTeacherPreview() {
         const preview = document.getElementById('teacher-word-preview');
         if(this.wordList.length === 0) {
-            preview.innerHTML = "<em>No words added yet. Start adding words above!</em>";
+            preview.innerHTML = "<em>No words added yet. Type a word above to auto-fetch definitions!</em>";
             return;
         }
         preview.innerHTML = this.wordList.map((item, idx) => `
@@ -365,7 +390,10 @@ class SpellingGame {
                     <small style="color: #475569;">EN: ${item.meaning}</small><br>
                     <small style="color: #047857; font-weight: bold;">ZH: ${item.mandarin}</small>
                 </div>
-                <button class="danger" onclick="app.removeWord(${idx})">Remove</button>
+                <div class="action-btns">
+                    <button class="edit-btn" onclick="app.editWord(${idx})">Edit</button>
+                    <button class="danger" onclick="app.removeWord(${idx})">Remove</button>
+                </div>
             </div>
         `).join('');
     }
