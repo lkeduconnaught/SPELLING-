@@ -165,13 +165,13 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The smart dictionary will generate the English meaning & Mandarin translation!</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word. The smart dictionary will fetch rich English definitions and multi-angle Mandarin meanings!</p>
         
         <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., beautiful, environment, camera">
-        <div id="loading-text">🌐 Generating English definition & Mandarin translation... Please wait...</div>
+        <input type="text" id="teacher-word-input" placeholder="e.g., Korean, environment, camera">
+        <div id="loading-text">🌐 Fetching rich English definition & detailed Mandarin meanings... Please wait...</div>
 
-        <button onclick="app.addWord()">Add Word (Smart Dictionary)</button>
+        <button onclick="app.addWord()">Add Word (Rich Dictionary)</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
@@ -258,55 +258,61 @@ class SpellingGame {
         }
     }
 
-    // Smart Automated Dictionary & Translation Engine
-    async fetchDictionaryData(word) {
-        const cleanWord = word.trim().toLowerCase();
+    // High-Detail Rich Dictionary Engine (English + Multi-Angle Mandarin)
+    async fetchRichDictionaryData(word) {
+        const cleanWord = word.trim();
+        const lowerWord = cleanWord.toLowerCase();
         
-        // Comprehensive built-in educational dictionary for guaranteed accurate meanings & Mandarin
-        const smartDatabase = {
-            "brazilian": { en: "Of or relating to Brazil or its people.", zh: "巴西人 / 巴西的" },
-            "apple": { en: "A round fruit with red, green, or yellow skin.", zh: "苹果" },
-            "school": { en: "An institution for educating children.", zh: "学校" },
-            "elephant": { en: "A very large grey mammal with a trunk and tusks.", zh: "大象" },
-            "volcano": { en: "A mountain with a crater through which lava erupts.", zh: "火山" },
-            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气、胆量" },
-            "science": { en: "The systematic study of the physical and natural world.", zh: "科学" },
-            "library": { en: "A building containing collections of books to read and borrow.", zh: "图书馆" },
-            "teacher": { en: "A person who teaches, especially in a school.", zh: "老师" },
-            "student": { en: "A person who is studying at a school or college.", zh: "学生" }
+        // Expanded built-in rich dictionary for top educational terms & proper nouns (like Korean, Brazilian, etc.)
+        const richDatabase = {
+            "korean": { en: "A native or inhabitant of Korea, or its language.", zh: "韩国人 / 朝鲜人 / 韩国语 / 朝鲜语" },
+            "brazilian": { en: "A native or inhabitant of Brazil.", zh: "巴西人 / 巴西的" },
+            "apple": { en: "A round fruit with red, green, or yellow skin and crisp flesh.", zh: "苹果 (shuǐguǒ - 水果)" },
+            "school": { en: "An institution for educating children.", zh: "学校 (xuéxiào - 学习的地方)" },
+            "elephant": { en: "A very large grey mammal with a trunk, large ears, and tusks.", zh: "大象 (dàxiàng - 大型哺乳动物)" },
+            "volcano": { en: "A mountain with a crater through which lava and gas erupt.", zh: "火山 (huǒshān)" },
+            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气、胆量 (yǒngqì)" },
+            "science": { en: "The systematic study of the physical and natural world.", zh: "科学 (kēxué)" },
+            "library": { en: "A building containing collections of books for reading and borrowing.", zh: "图书馆 (túshūguǎn)" },
+            "environment": { en: "The surroundings or conditions in which a person, animal, or plant lives.", zh: "环境、自然环境 (huánjìng)" }
         };
 
-        if (smartDatabase[cleanWord]) {
-            return smartDatabase[cleanWord];
+        if (richDatabase[lowerWord]) {
+            return richDatabase[lowerWord];
         }
 
-        let englishDef = `Vocabulary word: ${word}`;
-        let mandarinMeaning = word;
+        let englishDef = `A term meaning ${cleanWord}.`;
+        let mandarinMeaning = cleanWord;
 
-        // 1. Fetch exact English definition from Free Dictionary API
+        // 1. Fetch exact English definition
         try {
-            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lowerWord)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data[0] && data[0].meanings && data[0].meanings[0].definitions) {
-                    englishDef = data[0].meanings[0].definitions[0].definition;
+                    const defs = data[0].meanings[0].definitions;
+                    englishDef = defs.map((d, i) => `${i + 1}. ${d.definition}`).join(' ');
                 }
             }
         } catch (e) {
-            console.warn("Dictionary API fallback used.");
+            console.warn("Dictionary lookup fallback.");
         }
 
-        // 2. Fetch professional Mandarin translation
+        // 2. Fetch multi-angle Mandarin translations
         try {
             const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanWord)}&langpair=en|zh`);
             if (transRes.ok) {
                 const transData = await transRes.json();
                 if (transData && transData.responseData && transData.responseData.translatedText) {
-                    mandarinMeaning = transData.responseData.translatedText;
+                    let primaryTrans = transData.responseData.translatedText;
+                    // Gather matches if available for richer detail
+                    let matches = transData.matches ? transData.matches.map(m => m.translation).filter(t => t && t !== primaryTrans) : [];
+                    let uniqueMatches = [...new Set([primaryTrans, ...matches])].slice(0, 3);
+                    mandarinMeaning = uniqueMatches.join(' / ');
                 }
             }
         } catch (e) {
-            console.warn("Translation API fallback used.");
+            console.warn("Translation lookup fallback.");
         }
 
         return {
@@ -327,7 +333,7 @@ class SpellingGame {
 
         loadingText.style.display = 'block';
         
-        const result = await this.fetchDictionaryData(word);
+        const result = await this.fetchRichDictionaryData(word);
 
         loadingText.style.display = 'none';
 
