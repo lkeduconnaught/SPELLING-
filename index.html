@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allstars Edu Spelling Defender</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #0f172a;
+            margin-top: 0;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button.secondary {
+            background-color: #64748b;
+        }
+        button.secondary:hover {
+            background-color: #475569;
+        }
+        button.warning {
+            background-color: var(--warning);
+        }
+        button.warning:hover {
+            background-color: #d97706;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 16px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .role-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .word-list-preview {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #f1f5f9;
+        }
+        .word-item-tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin: 4px;
+            font-size: 0.9rem;
+        }
+        .review-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .review-card {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+        }
+        .review-card.skipped {
+            background-color: #fef08a;
+            border-color: #eab308;
+        }
+        .review-card.answered {
+            background-color: #d1fae5;
+            border-color: #34d399;
+        }
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .speaker-btn {
+            background: #0ea5e9;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- SCREEN 1: HOME / ROLE SELECT -->
+    <div id="screen-home" class="screen active">
+        <h2>🌟 Allstars Edu Spelling Game</h2>
+        <p>Select your mode to begin:</p>
+        <div class="role-selection">
+            <button onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Input Words)</button>
+            <button onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: TEACHER MODE -->
+    <div id="screen-teacher" class="screen">
+        <h2>👩‍🏫 Teacher Input Panel</h2>
+        <label for="teacher-word-input">Enter Spelling Word:</label>
+        <input type="text" id="teacher-word-input" placeholder="e.g., Elephant">
+        
+        <label for="teacher-meaning-input">Meaning / Hint (AI or Custom):</label>
+        <input type="text" id="teacher-meaning-input" placeholder="e.g., A very large grey animal with a trunk">
+
+        <button onclick="app.addWord()">Add Word to List</button>
+
+        <h3>Current Spelling Session List:</h3>
+        <div id="teacher-word-preview" class="word-list-preview">
+            <em>No words added yet.</em>
+        </div>
+
+        <button onclick="app.saveSession()" style="background-color: var(--success);">Save & Return Home</button>
+        <button onclick="app.switchScreen('screen-home')" class="secondary">Back to Home</button>
+    </div>
+
+    <!-- SCREEN 3: STUDENT GAME SCREEN -->
+    <div id="screen-student-game" class="screen">
+        <h2 id="game-progress-title">Question 1 of X</h2>
+        <button class="speaker-btn" onclick="app.speakCurrentWord()">🔊 Listen to Word</button>
+        
+        <p><strong>Hint / Meaning:</strong> <span id="game-meaning-display">-</span></p>
+        
+        <label for="student-answer-input">Your Spelling:</label>
+        <input type="text" id="student-answer-input" placeholder="Type spelling here..." autocomplete="off">
+
+        <button onclick="app.submitAnswer()">Next / Confirm Answer</button>
+        <button onclick="app.promptSkip()" class="warning">Skip Word</button>
+    </div>
+
+    <!-- SCREEN 4: REVIEW & RETRY SCREEN -->
+    <div id="screen-review" class="screen">
+        <h2>📝 Review Your Spelling</h2>
+        <p>Words highlighted in <span style="background-color: #fef08a; padding: 2px 6px; border-radius: 4px;">yellow</span> were skipped or unanswered. Click any word to retry before submitting!</p>
+        
+        <div id="review-container" class="review-grid"></div>
+
+        <button onclick="app.proceedToFilter()" style="background-color: var(--success);">Proceed to Final Submit</button>
+    </div>
+
+    <!-- SCREEN 5: ADVANCED FILTER & SUBMISSION -->
+    <div id="screen-filter" class="screen">
+        <h2>📊 Student Details & Submission</h2>
+        
+        <label for="filter-branch">Select Branch:</label>
+        <select id="filter-branch">
+            <option value="LK Imbi">LK Imbi</option>
+            <option value="LK JinJang">LK JinJang</option>
+            <option value="LK Taman Connaught">LK Taman Connaught</option>
+            <option value="Allstar Batu 11">Allstar Batu 11</option>
+        </select>
+
+        <label for="filter-standard">Select Standard Level:</label>
+        <select id="filter-standard">
+            <option value="Standard 1">Standard 1</option>
+            <option value="Standard 2">Standard 2</option>
+            <option value="Standard 3">Standard 3</option>
+            <option value="Standard 4">Standard 4</option>
+            <option value="Standard 5">Standard 5</option>
+            <option value="Standard 6">Standard 6</option>
+        </select>
+
+        <label for="filter-name">Student Name:</label>
+        <input type="text" id="filter-name" placeholder="Enter full student name">
+
+        <button onclick="app.submitFinalResults()" style="background-color: var(--success);">Submit Results to Google Sheet</button>
+    </div>
+
+    <!-- SCREEN 6: RESULTS SCREEN -->
+    <div id="screen-results" class="screen">
+        <h2>🎉 Spelling Results</h2>
+        <div id="results-summary"></div>
+        <button onclick="app.resetGame()">Back to Home</button>
+    </div>
+</div>
+
+<!-- CONFIRMATION / ENCOURAGEMENT MODAL -->
+<div id="skip-modal" class="modal">
+    <div class="modal-content">
+        <h3>Are you sure you want to skip?</h3>
+        <p style="color: #d97706; font-weight: bold;">Don't give up easily! You can do this!<br>别放弃，再试一次！加油！</p>
+        <button onclick="app.confirmSkip()" class="warning">Yes, Skip</button>
+        <button onclick="app.closeModal()" class="secondary">Cancel (Keep Trying)</button>
+    </div>
+</div>
+
+<script>
+class SpellingGame {
+    constructor() {
+        this.wordList = [
+            { word: "apple", meaning: "A round fruit with red, green, or yellow skin." },
+            { word: "school", meaning: "A place where children go to learn." }
+        ];
+        this.currentIndex = 0;
+        this.studentAnswers = {}; // index -> typed answer
+        this.skippedStatus = {};  // index -> boolean
+    }
+
+    switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        if(screenId === 'screen-teacher') {
+            this.renderTeacherPreview();
+        }
+    }
+
+    addWord() {
+        const wordInput = document.getElementById('teacher-word-input');
+        const meaningInput = document.getElementById('teacher-meaning-input');
+        
+        const word = wordInput.value.trim();
+        const meaning = meaningInput.value.trim() || "No meaning provided.";
+
+        if(!word) {
+            alert("Please enter a spelling word.");
+            return;
+        }
+
+        this.wordList.push({ word, meaning });
+        wordInput.value = '';
+        meaningInput.value = '';
+        this.renderTeacherPreview();
+    }
+
+    renderTeacherPreview() {
+        const preview = document.getElementById('teacher-word-preview');
+        if(this.wordList.length === 0) {
+            preview.innerHTML = "<em>No words added yet.</em>";
+            return;
+        }
+        preview.innerHTML = this.wordList.map(item => `<span class="word-item-tag"><strong>${item.word}</strong>: ${item.meaning}</span>`).join('');
+    }
+
+    saveSession() {
+        if(this.wordList.length === 0) {
+            alert("Please add at least one word.");
+            return;
+        }
+        alert("Spelling list saved successfully!");
+        this.switchScreen('screen-home');
+    }
+
+    startStudentGame() {
+        if(this.wordList.length === 0) {
+            alert("No spelling words available! Ask your teacher to input words first.");
+            return;
+        }
+        this.currentIndex = 0;
+        this.studentAnswers = {};
+        this.skippedStatus = {};
+        this.switchScreen('screen-student-game');
+        this.loadQuestion();
+    }
+
+    loadQuestion() {
+        const item = this.wordList[this.currentIndex];
+        document.getElementById('game-progress-title').innerText = `Question ${this.currentIndex + 1} of ${this.wordList.length}`;
+        document.getElementById('game-meaning-display').innerText = item.meaning;
+        document.getElementById('student-answer-input').value = this.studentAnswers[this.currentIndex] || '';
+        document.getElementById('student-answer-input').focus();
+        this.speakCurrentWord();
+    }
+
+    speakCurrentWord() {
+        const word = this.wordList[this.currentIndex].word;
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    submitAnswer() {
+        const val = document.getElementById('student-answer-input').value.trim();
+        this.studentAnswers[this.currentIndex] = val;
+        this.skippedStatus[this.currentIndex] = false;
+
+        this.currentIndex++;
+        if(this.currentIndex < this.wordList.length) {
+            this.loadQuestion();
+        } else {
+            this.renderReviewScreen();
+            this.switchScreen('screen-review');
+        }
+    }
+
+    promptSkip() {
+        document.getElementById('skip-modal').style.display = 'flex';
+    }
+
+    closeModal() {
+        document.getElementById('skip-modal').style.display = 'none';
+    }
+
+    confirmSkip() {
+        this.closeModal();
+        const val = document.getElementById('student-answer-input').value.trim();
+        this.studentAnswers[this.currentIndex] = val;
+        this.skippedStatus[this.currentIndex] = true;
+
+        this.currentIndex++;
+        if(this.currentIndex < this.wordList.length) {
+            this.loadQuestion();
+        } else {
+            this.renderReviewScreen();
+            this.switchScreen('screen-review');
+        }
+    }
+
+    renderReviewScreen() {
+        const container = document.getElementById('review-container');
+        container.innerHTML = this.wordList.map((item, idx) => {
+            const answered = this.studentAnswers[idx] && this.studentAnswers[idx].length > 0;
+            const skipped = this.skippedStatus[idx] || !answered;
+            const cardClass = skipped ? 'review-card skipped' : 'review-card answered';
+            const statusText = skipped ? '⚠️ Unanswered / Skipped (Click to Retry)' : `✅ Answered: "${this.studentAnswers[idx]}"`;
+            
+            return `
+                <div class="${cardClass}" onclick="app.jumpToQuestion(${idx})">
+                    <div>
+                        <strong>Word #${idx + 1}</strong> (${item.meaning})
+                    </div>
+                    <div>${statusText}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    jumpToQuestion(index) {
+        this.currentIndex = index;
+        this.switchScreen('screen-student-game');
+        this.loadQuestion();
+    }
+
+    proceedToFilter() {
+        this.switchScreen('screen-filter');
+    }
+
+    submitFinalResults() {
+        const branch = document.getElementById('filter-branch').value;
+        const standard = document.getElementById('filter-standard').value;
+        const studentName = document.getElementById('filter-name').value.trim();
+
+        if(!studentName) {
+            alert("Please enter the student's name.");
+            return;
+        }
+
+        // Calculate score
+        let correctCount = 0;
+        let details = [];
+        this.wordList.forEach((item, idx) => {
+            const studentAns = (this.studentAnswers[idx] || "").trim().toLowerCase();
+            const correctAns = item.word.toLowerCase();
+            const isCorrect = studentAns === correctAns;
+            if(isCorrect) correctCount++;
+            details.push({
+                word: item.word,
+                studentAnswer: this.studentAnswers[idx] || "(Blank)",
+                correct: isCorrect
+            });
+        });
+
+        // Display results
+        const summaryDiv = document.getElementById('results-summary');
+        summaryDiv.innerHTML = `
+            <p><strong>Branch:</strong> ${branch}</p>
+            <p><strong>Standard:</strong> ${standard}</p>
+            <p><strong>Student Name:</strong> ${studentName}</p>
+            <p><strong>Score:</strong> ${correctCount} / ${this.wordList.length}</p>
+            <hr>
+            <h3>Detailed Breakdown:</h3>
+            <ul>
+                ${details.map(d => `<li>Word: <strong>${d.word}</strong> | Your Answer: <em>${d.studentAnswer}</em> - ${d.correct ? '✅ Correct' : '❌ Wrong'}</li>`).join('')}
+            </ul>
+        `;
+
+        // Note regarding Google Sheets backend:
+        // To connect this data to an organized Google Sheet automatically based on Branch, Standard, and Name, 
+        // you can deploy a Google Apps Script web app endpoint and fetch() it here:
+        // fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', { method: 'POST', body: JSON.stringify({ branch, standard, studentName, score: correctCount, details }) });
+
+        this.switchScreen('screen-results');
+    }
+
+    resetGame() {
+        this.currentIndex = 0;
+        this.studentAnswers = {};
+        this.skippedStatus = {};
+        this.switchScreen('screen-home');
+    }
+}
+
+const app = new SpellingGame();
+</script>
+
+</body>
+</html>
