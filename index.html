@@ -79,7 +79,7 @@
         button.danger:hover {
             background-color: #dc2626;
         }
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             margin: 8px 0 16px 0;
@@ -87,6 +87,11 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1rem;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            height: 60px;
         }
         .role-selection {
             display: flex;
@@ -150,7 +155,7 @@
         <h2>🌟 Allstars Edu Spelling Defender</h2>
         <p>Select your mode to begin:</p>
         <div class="role-selection">
-            <button type="button" onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Manage Words)</button>
+            <button type="button" onclick="app.switchScreen('screen-teacher')">👩‍🏫 Teacher Mode (Input Words)</button>
             <button type="button" onclick="app.startStudentGame()" class="secondary">👦 Student Mode (Play Spelling)</button>
         </div>
     </div>
@@ -158,19 +163,25 @@
     <!-- SCREEN 2: TEACHER MODE -->
     <div id="screen-teacher" class="screen">
         <h2>👩‍🏫 Teacher Input Panel</h2>
-        <p style="font-size: 0.9rem; color: #64748b;">Type any spelling word below. Professional definitions and Mandarin meanings will generate instantly.</p>
+        <p style="font-size: 0.9rem; color: #64748b;">Type the spelling word, exact English definition, and accurate Mandarin meaning below.</p>
         
-        <label for="teacher-word-input">Enter Spelling Word:</label>
-        <input type="text" id="teacher-word-input" placeholder="e.g., bomb, magnificent, environment">
+        <label for="teacher-word-input">Spelling Word:</label>
+        <input type="text" id="teacher-word-input" placeholder="e.g., Magnificent">
 
-        <button type="button" onclick="app.addWord()">Add Word</button>
+        <label for="teacher-meaning-input">English Definition:</label>
+        <textarea id="teacher-meaning-input" placeholder="Type professional English definition..."></textarea>
+
+        <label for="teacher-mandarin-input">中文意思 (Mandarin Meaning):</label>
+        <input type="text" id="teacher-mandarin-input" placeholder="Type Chinese translation...">
+
+        <button type="button" onclick="app.addWord()" style="background-color: var(--success);">Add Word to List</button>
 
         <h3>Current Spelling List:</h3>
         <div id="teacher-word-preview" class="word-list-preview">
             <em>No words added yet. Start adding words above!</em>
         </div>
 
-        <button type="button" onclick="app.saveSession()" style="background-color: var(--success);">Save List & Return Home</button>
+        <button type="button" onclick="app.saveSession()" style="background-color: var(--primary);">Save List & Return Home</button>
         <button type="button" onclick="app.switchScreen('screen-home')" class="secondary">Back to Home</button>
     </div>
 
@@ -250,55 +261,31 @@ class SpellingGame {
         }
     }
 
-    getDictionaryEntry(word) {
-        const cleanWord = word.trim().toLowerCase();
-        
-        const database = {
-            "bomb": { en: "A explosive device designed to detonate and cause damage.", zh: "炸弹 / 爆裂物" },
-            "magnificent": { en: "Extremely beautiful, elaborate, or impressive.", zh: "宏伟的 / 壮丽的" },
-            "environment": { en: "The surroundings or conditions in which a person, animal, or plant lives.", zh: "自然环境 / 周围状况" },
-            "courage": { en: "The ability to do something that frightens one; bravery.", zh: "勇气 / 胆量" },
-            "science": { en: "The systematic study of the physical and natural world.", zh: "科学" },
-            "camera": { en: "A device used for taking photographs or recording videos.", zh: "照相机 / 摄像机" },
-            "brazilian": { en: "Relating to Brazil or its people.", zh: "巴西人 / 巴西的" },
-            "korean": { en: "Relating to Korea, its people, or its language.", zh: "韩国 / 朝鲜语" },
-            "chinese": { en: "Relating to China, its people, or its language.", zh: "中国 / 汉语 / 中文" },
-            "beautiful": { en: "Extremely attractive; pleasing to look at.", zh: "美丽漂亮的" },
-            "active": { en: "Engaged in action; lively and energetic.", zh: "积极活跃的" },
-            "apple": { en: "A round fruit with red, green, or yellow skin.", zh: "苹果" },
-            "school": { en: "An institution for educating children.", zh: "学校" },
-            "elephant": { en: "A very large grey mammal with a trunk and tusks.", zh: "大象" }
-        };
-
-        if (database[cleanWord]) {
-            return database[cleanWord];
-        }
-
-        // Clean, professional fallback for any custom word so it never looks awkward
-        return {
-            en: `An important vocabulary word meaning ${cleanWord}.`,
-            zh: `生词: ${cleanWord}`
-        };
-    }
-
     addWord() {
-        const wordInput = document.getElementById('teacher-word-input');
-        const word = wordInput.value.trim();
+        const word = document.getElementById('teacher-word-input').value.trim();
+        const meaning = document.getElementById('teacher-meaning-input').value.trim();
+        const mandarin = document.getElementById('teacher-mandarin-input').value.trim();
 
         if(!word) {
             alert("Please enter a spelling word.");
             return;
         }
 
-        const entry = this.getDictionaryEntry(word);
+        if(!meaning || !mandarin) {
+            alert("Please enter both the English definition and Mandarin meaning.");
+            return;
+        }
 
         this.wordList.push({ 
             word: word, 
-            meaning: entry.en, 
-            mandarin: entry.zh 
+            meaning: meaning, 
+            mandarin: mandarin 
         });
         
-        wordInput.value = '';
+        document.getElementById('teacher-word-input').value = '';
+        document.getElementById('teacher-meaning-input').value = '';
+        document.getElementById('teacher-mandarin-input').value = '';
+        
         this.renderTeacherPreview();
     }
 
